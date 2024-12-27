@@ -150,7 +150,7 @@ class ConnectMeshAPI:
                 _LOGGER.debug(f"Set temperature to {temperature}K for device {unique_id}")
 
 
-    async def set_hue_saturation(self, unique_id: str, hue: float, saturation: float):
+    async def set_hsl(self, unique_id: str, hue: float, saturation: float, lightness: float):
         """Set the hue and saturation of a device."""
         headers = {
             "accept": "application/json",
@@ -160,13 +160,14 @@ class ConnectMeshAPI:
         data = {
             "hue": min(360, max(0, hue)),  # Ensure hue is between 0 and 360
             "saturation": min(1, max(0, saturation)),  # Ensure saturation is between 0 and 1
+            "lightness": min(1, max(0, lightness)),
             "uniqueId": unique_id,
             "acknowledged": True,
             "retries": 0,
             "timeout_ms": 10000
         }
-        async with self.session.put(f"{self.base_url}/devices/hue_saturation", headers=headers, json=data) as response:
+        async with self.session.put(f"{self.base_url}/devices/hsl", headers=headers, json=data) as response:
             if response.status != 200:
                 _LOGGER.error(f"Failed to set hue and saturation. Status code: {response.status}")
             else:
-                _LOGGER.debug(f"Set hue to {hue} and saturation to {saturation} for device {unique_id}")
+                _LOGGER.debug(f"Set hue to {hue}, saturation to {saturation} and lightness to {lightness} for device {unique_id}")

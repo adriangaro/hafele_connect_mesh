@@ -133,7 +133,8 @@ class ConnectMeshLight(CoordinatorEntity, LightEntity):
             hue, saturation = self._hs_color
             hue_api = hue / 360 * 65535
             saturation_api = saturation / 100
-            await self._api_client.set_hue_saturation(self._attr_unique_id, hue_api, saturation_api)
+            lightness_api = self._ha_to_api_brightness(self._last_known_brightness)
+            await self._api_client.set_hsl(self._attr_unique_id, hue_api, saturation_api, lightness_api)
 
         self.async_write_ha_state()
         await self._async_update_ha_state()
