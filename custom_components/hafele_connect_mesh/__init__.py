@@ -71,6 +71,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 class ConnectMeshAPI:
     """API client for Connect Mesh."""
+    retries = 3
 
     def __init__(self, session: aiohttp.ClientSession, api_token: str):
         """Initialize the API client."""
@@ -84,12 +85,19 @@ class ConnectMeshAPI:
             "accept": "*/*",
             "Authorization": f"Bearer {self.api_token}"
         }
-        async with self.session.get(f"{self.base_url}/devices/{unique_id}/status", headers=headers) as response:
-            if response.status == 200:
-                return await response.json()
-            else:
-                _LOGGER.error(f"Failed to get device status. Status code: {response.status}")
-                return None
+
+        async def _try():
+            async with self.session.get(f"{self.base_url}/devices/{unique_id}/status", headers=headers) as response:
+                if response.status == 200:
+                    return await response.json()
+                else:
+                    _LOGGER.error(f"Failed to get device status. Status code: {response.status}")
+                    return {}  # Expected empty dict in light code
+        for _ in range(self.retries):
+            ret = await _try()
+            if ret:
+                return ret
+
 
     async def set_power(self, unique_id: str, power: bool):
         """Set the power state of a device."""
@@ -102,7 +110,7 @@ class ConnectMeshAPI:
             "power": "on" if power else "off",
             "uniqueId": unique_id,
             "acknowledged": True,
-            "retries": 0,
+            "retries": self.retries,
             "timeout_ms": 10000
         }
         async with self.session.put(f"{self.base_url}/devices/power", headers=headers, json=data) as response:
@@ -120,7 +128,7 @@ class ConnectMeshAPI:
             "lightness": lightness,
             "uniqueId": unique_id,
             "acknowledged": True,
-            "retries": 0,
+            "retries": self.retries,
             "timeout_ms": 10000
         }
         async with self.session.put(f"{self.base_url}/devices/lightness", headers=headers, json=data) as response:
@@ -140,7 +148,7 @@ class ConnectMeshAPI:
             "temperature": temperature,
             "uniqueId": unique_id,
             "acknowledged": True,
-            "retries": 0,
+            "retries": self.retries,
             "timeout_ms": 10000
         }
         async with self.session.put(f"{self.base_url}/devices/temperature", headers=headers, json=data) as response:
@@ -163,7 +171,7 @@ class ConnectMeshAPI:
             "lightness": min(1, max(0, lightness)),
             "uniqueId": unique_id,
             "acknowledged": True,
-            "retries": 0,
+            "retries": self.retries,
             "timeout_ms": 10000
         }
         async with self.session.put(f"{self.base_url}/devices/hsl", headers=headers, json=data) as response:
