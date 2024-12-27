@@ -131,7 +131,7 @@ class ConnectMeshLight(CoordinatorEntity, LightEntity):
         if ATTR_HS_COLOR in kwargs:
             self._hs_color = kwargs[ATTR_HS_COLOR]
             hue, saturation = self._hs_color
-            hue_api = hue / 360 * 65535
+            hue_api = hue
             saturation_api = saturation / 100
             lightness_api = self._ha_to_api_brightness(self._last_known_brightness)
             await self._api_client.set_hsl(self._attr_unique_id, hue_api, saturation_api, lightness_api)
